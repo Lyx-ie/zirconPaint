@@ -131,17 +131,22 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="drawingFunctions.h" />
+    <ClInclude Include="buttons.h" />
+    <ClInclude Include="fileExplorer.h" />
     <ClInclude Include="masterInclude.h" />
+    <ClInclude Include="resource.h" />
     <ClInclude Include="tools.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="drawingFunctions.cpp" />
+    <ClCompile Include="buttons.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="tools.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Text Include="README.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="zirconPaint.rc" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

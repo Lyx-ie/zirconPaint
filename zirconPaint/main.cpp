@@ -1,7 +1,16 @@
+#pragma once
+#include "masterInclude.h"
+#include "tools.h"
+#include "buttons.h"
 
-#include "drawingFunctions.h"
 int main()
 {
+
+
+
+
+
+
     //initialising parametersS
     sf::RenderWindow window(sf::VideoMode({ 1080,720 }), "SFML window");
     window.setFramerateLimit(60);
@@ -24,6 +33,7 @@ int main()
     sf::Vector2f previewLocation;
     bool mouseBusy = false;
     bool keyboardActionThisFrame = false;
+    bool allowDrawing = false;
 
     //create vector view hierarchy cache (unlimited) If have time, create limited action hierarchy cache
     std::vector <Tools*> hierarchy; // <-- *
@@ -33,122 +43,190 @@ int main()
     rectangleTool* currentRectangle = NULL;
     freehandTool* currentFreehand = NULL;
     lineTool* currentLine = NULL;
-
+    
     sf::CircleShape previewCircle;
 
+    //initialise UI elements
+    sf::RectangleShape verticalBar(sf::Vector2f(100, 720));
+    verticalBar.setFillColor(sf::Color(225, 225, 225, 255));
+    sf::RectangleShape horizontalBar(sf::Vector2f(980, 100));
+    horizontalBar.setPosition(sf::Vector2f(100, 0));
+    horizontalBar.setFillColor(sf::Color(225, 225, 225, 255));
+    
+    sf::RectangleShape otherVerticalBar(sf::Vector2f(80, 700));
+    otherVerticalBar.setFillColor(sf::Color(225, 225, 225, 255));
+    otherVerticalBar.setPosition(sf::Vector2f(1000, 100));
+    sf::RectangleShape otherHorizontalBar(sf::Vector2f(900, 20));
+    otherHorizontalBar.setPosition(sf::Vector2f(100, 700));
+    otherHorizontalBar.setFillColor(sf::Color(225, 225, 225, 255));
+
+    sf::RectangleShape background(sf::Vector2f(1080, 720));
+
+    std::vector <Button> buttons;
+
+    Button testButton("assets/icons/default.png", "assets/icons/default.png", sf::Vector2f(20, 20), _NULL);
+    buttons.push_back(testButton);
+    Button rectangleButton("assets/icons/rectDefault.png", "assets/icons/rectPressed.png", sf::Vector2f(180, 20), _rectangle);
+    buttons.push_back(rectangleButton);
+    Button ellipseButton("assets/icons/ellipseDefault.png", "assets/icons/ellipsePressed.png", sf::Vector2f(260, 20), _ellipse);
+    buttons.push_back(ellipseButton);
+    Button lineButton("assets/icons/lineDefault.png", "assets/icons/linePressed.png", sf::Vector2f(340, 20), _line);
+    buttons.push_back(lineButton);
+    Button freehandButton("assets/icons/freehandDefault.png", "assets/icons/freehandPressed.png", sf::Vector2f(100, 20), _freehand);
+    buttons.push_back(freehandButton);
+    
     //main loop begins
     while (window.isOpen()) {
         window.clear();
+
+
 
         //get and store the current mouse location as a vector and a float for later use
         mouseLocationVectorInt = sf::Mouse::getPosition(window);
         sf::Vector2f mouseLocationVectorFloat(mouseLocationVectorInt);
 
+        //allow drawing function checks
+        if (window.hasFocus() != true) { allowDrawing = false; }
+        else if (mouseLocationVectorFloat.x < 100 || mouseLocationVectorFloat.y < 100) { allowDrawing = false; }
+        else if (mouseLocationVectorFloat.x > 1000 || mouseLocationVectorFloat.y > 700) { allowDrawing = false; }
+        else { allowDrawing = true; }
+
         while (const std::optional event = window.pollEvent())
         {
-            if (currentTool == _ellipse) {
-                if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Left))
-                {
-                    if (mouseBusy == false) { //if this is the first frame that the mouse has been pressed down
-                        //create a new ellipse
-                        currentEllipse = new ellipseTool();
-                        mouseDownLocation = createEllipse(mouseLocationVectorFloat, currentEllipse, currentColour);
-                        mouseBusy = true;
+            if (allowDrawing == false) {
+
+                if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Left)) {
+                    for (Button thisButton : buttons) {
+                        if (thisButton.buttonQuery(mouseLocationVectorInt)) {
+                            currentTool = thisButton.returnToolType();
+                        }
                     }
-                    else if (mouseBusy == true) { //if the mouse is already busy this frame
-                        //update the size values of the shape this frame
-                        currentEllipse->setEllipseSize(mouseLocationVectorFloat - mouseDownLocation);
-                    }
-                }
-                else if (mouseBusy == true) { //if the mouse is released this frame
-                    //push tool data to the stack
-                    hierarchy.push_back(currentEllipse);
-                    mouseBusy = false;
                 }
             }
-            else if (currentTool == _rectangle) {//see above
-                if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Left))
-                {
-                    if (mouseBusy == false) {
-                        currentRectangle = new rectangleTool();
-                        mouseDownLocation = createRectangle(mouseLocationVectorFloat, currentRectangle, currentColour);
-                        mouseBusy = true;
+
+
+
+            //main drawing loop
+            if (allowDrawing == true) {
+                if (currentTool == _ellipse) {
+                    if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Left))
+                    {
+                        if (mouseBusy == false) { //if this is the first frame that the mouse has been pressed down
+                            //create a new ellipse
+                            currentEllipse = new ellipseTool();
+                            mouseDownLocation = mouseLocationVectorFloat;
+                            currentEllipse->setEllipseColour(currentColour);
+                            currentEllipse->setEllipseLocation(mouseLocationVectorFloat);
+                            mouseBusy = true;
+                        }
+                        else if (mouseBusy == true) { //if the mouse is already busy this frame
+                            //update the size values of the shape this frame
+                            currentEllipse->setEllipseSize(mouseLocationVectorFloat - mouseDownLocation);
+                        }
+                    }
+                    else if (mouseBusy == true) { //if the mouse is released this frame
+                        //push tool data to the stack
+                        hierarchy.push_back(currentEllipse);
+                        mouseBusy = false;
+                    }
+                }
+                else if (currentTool == _rectangle) {//see above
+                    if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Left))
+                    {
+                        if (mouseBusy == false) {
+                            currentRectangle = new rectangleTool();
+                            mouseDownLocation = mouseLocationVectorFloat;
+                            currentRectangle->setRectangleColour(currentColour);
+                            currentRectangle->setRectangleLocation(mouseLocationVectorFloat);
+                            mouseBusy = true;
+                        }
+                        else if (mouseBusy == true) {
+                            currentRectangle->setRectangleSize(mouseLocationVectorFloat - mouseDownLocation);
+                        }
                     }
                     else if (mouseBusy == true) {
-                        currentRectangle->setRectangleSize(mouseLocationVectorFloat - mouseDownLocation);
+                        hierarchy.push_back(currentRectangle);
+                        mouseBusy = false;
                     }
                 }
-                else if (mouseBusy == true) {
-                    hierarchy.push_back(currentRectangle);
-                    mouseBusy = false;
-                }
-            }
-            else if (currentTool == _freehand) {
-                if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Left)) { // if clicked
-                    if (mouseBusy == false) { //initialise new freehand tool
-                        currentFreehand = new freehandTool;
-                        mouseBusy = true;
-                        createFreehand(mouseDownLocation, currentFreehand, currentColour);
-                        previewLocation = mouseLocationVectorFloat;
-                    }
-                    while (mouseBusy == true) {
-                        if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Left)) { //while lmb is pressed
-                            //this loop stores a freehand stroke in one hierarchy data entry in the stack, optimisation so cool
-                            window.setFramerateLimit(255);
-                            mouseLocationVectorInt = sf::Mouse::getPosition(window);
-                            sf::Vector2f mouseLocationVectorFloat(mouseLocationVectorInt);
-                            currentFreehand->freehandDraw(mouseLocationVectorFloat);
-                            for (Tools* currentTool : hierarchy) {
-                                window.draw(currentTool->render());
+                else if (currentTool == _freehand) {
+                    if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Left)) { // if clicked
+                        if (mouseBusy == false) { //initialise new freehand tool
+                            currentFreehand = new freehandTool;
+                            mouseBusy = true;
+                            currentFreehand->setFreehandColour(currentColour);
+                            currentFreehand->setFreehandSize(currentSize);
+                            previewLocation = mouseLocationVectorFloat;
+                        }
+                        while (mouseBusy == true) {
+                            if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Left)) { //while lmb is pressed
+                                //this loop stores a freehand stroke in one hierarchy data entry in the stack, optimisation so cool
+                                window.setFramerateLimit(255);
+                                window.clear();
+                                mouseLocationVectorInt = sf::Mouse::getPosition(window);
+                                sf::Vector2f mouseLocationVectorFloat(mouseLocationVectorInt);
+                                currentFreehand->freehandDraw(mouseLocationVectorFloat);
+                                window.draw(background);
+                                for (Tools* currentTool : hierarchy) {
+                                    window.draw(currentTool->render());
+                                }
+
+                                window.draw(currentFreehand->render());
+                                window.draw(verticalBar);
+                                window.draw(horizontalBar);
+                                window.draw(otherVerticalBar);
+                                window.draw(otherHorizontalBar);
+                                for (Button thisButton : buttons) {
+                                    window.draw(thisButton.buttonRender());
+                                }
+                                window.display();
                             }
-                            window.draw(currentFreehand->render());
-                            window.display();
-                        }
-                        else {//if mouse is released this frame
-                            //push data to stack
-                            hierarchy.push_back(currentFreehand);
-                            mouseBusy = false;
-                            window.setFramerateLimit(60);
+                            else {//if mouse is released this frame
+                                //push data to stack
+                                window.clear();
+                                hierarchy.push_back(currentFreehand);
+                                mouseBusy = false;
+                                window.setFramerateLimit(60);
+                            }
                         }
                     }
                 }
-            }
-            else if (currentTool == _line) {
-                if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Left))
-                {
-                    if (mouseBusy == false) {
-                        //create a new line
-                        currentLine = new lineTool();
-                        mouseDownLocation = createLine(mouseLocationVectorFloat, currentLine, currentColour);
-                        mouseBusy = true;
+                else if (currentTool == _line) {
+                    if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Left))
+                    {
+                        if (mouseBusy == false) {
+                            //create a new line
+                            currentLine = new lineTool();
+                            mouseDownLocation = mouseLocationVectorFloat;
+                            currentLine->setLineColour(currentColour);
+                            currentLine->setLineOrigin(mouseLocationVectorFloat);
+                            currentLine->setLineThickness(currentSize * 2);
+                            mouseBusy = true;
+                        }
+                        else if (mouseBusy == true) {
+                            //draw the line
+                            currentLine->setLineLocation(mouseLocationVectorFloat - mouseDownLocation);
+                        }
                     }
                     else if (mouseBusy == true) {
-                        //draw the line
-                        currentLine->setLineLocation(mouseLocationVectorFloat - mouseDownLocation);
+                        //push the line to the stack
+                        hierarchy.push_back(currentLine);
+                        mouseBusy = false;
                     }
-                }
-                else if (mouseBusy == true) {
-                    //push the line to the stack
-                    hierarchy.push_back(currentLine);
-                    mouseBusy = false;
                 }
             }
             if (event->is<sf::Event::Closed>()) { window.close(); }//close the window if the cross is pressed
             //tool change function (there are set colours here because I don't have a colour swatch yet, but colour change infrastructure is implemented).
             if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Num1)) {
-                currentTool = _ellipse;
                 currentColour = sf::Color::Blue;
             }
             else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Num2)) {
-                currentTool = _rectangle;
                 currentColour = sf::Color::Magenta;
             }
             else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Num3)) {
-                currentTool = _freehand;
-                currentColour = sf::Color::White;
+                currentColour = sf::Color::Black;
             }
             else if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Num4)) {
-                currentTool = _line;
                 currentColour = sf::Color::Red;
             }
             //undo function
@@ -167,6 +245,8 @@ int main()
                 keyboardActionThisFrame = false;
             }
         }
+
+        window.draw(background);
         //render hierarchy
         for (Tools* currentTool : hierarchy) {
             window.draw(currentTool->render());
@@ -183,8 +263,15 @@ int main()
                 window.draw(currentLine->renderLine());
             }
         }
+        //re-get mouse position so the preview doesn't bug
+
+        mouseLocationVectorInt = sf::Mouse::getPosition(window);
+        mouseLocationVectorFloat.x = mouseLocationVectorInt.x;
+        mouseLocationVectorFloat.y = mouseLocationVectorInt.y;
+
         //render prievews if required
         if (currentTool == _freehand) {
+
             moveOffset = previewLocation - mouseLocationVectorFloat;
             if (moveOffset != sf::Vector2f(0, 0)) { //don't update the location if the mouse hasn't moved this frame.
                 previewLocation = mouseLocationVectorFloat;
@@ -206,6 +293,19 @@ int main()
             previewCircle.setRadius(currentSize);
             previewCircle.setPosition(previewLocation - sf::Vector2f(currentSize, currentSize));
             window.draw(previewCircle);
+        }
+
+        //draw UI on top
+        window.draw(verticalBar);
+        window.draw(horizontalBar);
+        window.draw(otherVerticalBar);
+        window.draw(otherHorizontalBar);
+
+        
+
+        //draw buttons
+        for (Button thisButton : buttons) {
+            window.draw(thisButton.buttonRender());
         }
         //the big one
         window.display();

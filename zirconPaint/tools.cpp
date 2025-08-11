@@ -1,14 +1,17 @@
-#include <iostream>
+
 #include "tools.h"
+
 
 bool debugMode = false;
 sf::Vector2u drawingArea = (sf::Vector2u(1080, 720));
+sf::Vector2f drawingOrigin = (sf::Vector2f(100, 100));
 
 ellipseTool::ellipseTool()
 {
 	//resize texture to drawing area size and set tool type
 	bool resizeSuccessful;
 	resizeSuccessful = texture.resize(drawingArea);
+	
 	toolType = _ellipse;
 }
 
@@ -40,7 +43,6 @@ sf::Sprite ellipseTool::renderEllipse()
 	ellipse.setFillColor(ellipseColour);
 	ellipse.setRadius(ellipseDimensions);
 	ellipse.setPosition(ellipseLocation);
-
 	texture.draw(ellipse);
 	texture.display();
 	sprite.setTexture(texture.getTexture());
@@ -203,7 +205,7 @@ freehandTool::freehandTool()
 	resizeSuccessful = texture.resize(drawingArea);
 	size = 0;
 	toolType = _freehand;
-
+	bugfix = true; 
 }
 
 freehandTool::~freehandTool()
@@ -268,5 +270,54 @@ sf::Sprite freehandTool::render() {
 	return sf::Sprite(sprite);
 }
 
+customShapeTool::customShapeTool()
+{
+}
 
+customShapeTool::~customShapeTool()
+{
+}
 
+stampTool::stampTool()
+{
+	stampToolValid = false;
+	removeWarningPls = blankTexture.loadFromFile("assets/icons/blank.png");
+}
+
+stampTool::~stampTool()
+{
+}
+
+sf::Sprite stampTool::stamp(sf::Vector2f location)
+{
+	
+	if (stampToolValid == false) {
+		incorrectFileTypeDialogueBox2();
+		sf::Sprite blankSprite(blankTexture);
+		return (blankSprite);
+	}
+	else {
+		sf::Sprite stampSprite(imageTexture);
+		stampSprite.setPosition(location);
+	}
+
+}
+
+void stampTool::setImage()
+{
+	result = openFile();
+	switch (result) {
+	case(TRUE): {
+		std::cout << sFilePath;
+		break;
+	}
+	case(FALSE): {
+		incorrectFileTypeDialogueBox();
+		break;
+	}
+	}
+	stampToolValid = imageTexture.loadFromFile(sFilePath);
+	if (stampToolValid == false) {
+		incorrectFileTypeDialogueBox();
+	}
+}

@@ -18,24 +18,30 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="drawingFunctions.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="masterInclude.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="tools.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="buttons.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="fileExplorer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="resource.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="drawingFunctions.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="tools.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="buttons.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -43,5 +49,10 @@
     <Text Include="README.txt">
       <Filter>Meta</Filter>
     </Text>
+  </ItemGroup>
+  <ItemGroup>
+    <ResourceCompile Include="zirconPaint.rc">
+      <Filter>Resource Files</Filter>
+    </ResourceCompile>
   </ItemGroup>
 </Project>
