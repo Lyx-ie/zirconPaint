@@ -140,10 +140,8 @@
   <ItemGroup>
     <ClCompile Include="buttons.cpp" />
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="masterInclude.cpp" />
     <ClCompile Include="tools.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <Text Include="README.txt" />
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="zirconPaint.rc" />

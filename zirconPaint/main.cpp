@@ -5,18 +5,13 @@
 
 int main()
 {
-
-
-
-
-
-
     //initialising parametersS
     sf::RenderWindow window(sf::VideoMode({ 1080,720 }), "SFML window");
     window.setFramerateLimit(60);
 
     //current tool is none
     toolType currentTool = _NULL;
+    toolType previousTool = _NULL;
 
     //initialise default font and current font parameters which can be changed later
     const sf::Font defaultFont("assets/fonts/arial.ttf");
@@ -34,6 +29,9 @@ int main()
     bool mouseBusy = false;
     bool keyboardActionThisFrame = false;
     bool allowDrawing = false;
+    bool stampToolInstancePrompt = true;
+    bool imageSuccess = false;
+    std::string stampFilePath;
 
     //create vector view hierarchy cache (unlimited) If have time, create limited action hierarchy cache
     std::vector <Tools*> hierarchy; // <-- *
@@ -43,6 +41,8 @@ int main()
     rectangleTool* currentRectangle = NULL;
     freehandTool* currentFreehand = NULL;
     lineTool* currentLine = NULL;
+    stampTool* currentStamp = NULL;
+    customShapeTool* currentCustom = NULL;
     
     sf::CircleShape previewCircle;
 
@@ -74,6 +74,31 @@ int main()
     buttons.push_back(lineButton);
     Button freehandButton("assets/icons/freehandDefault.png", "assets/icons/freehandPressed.png", sf::Vector2f(100, 20), _freehand);
     buttons.push_back(freehandButton);
+    Button customButton("assets/icons/customDefault.png", "assets/icons/customDefault.png", sf::Vector2f(564, 20), _custom);
+    buttons.push_back(customButton);
+    Button stampButton("assets/icons/stampDefault.png", "assets/icons/stampPressed.png", sf::Vector2f(420, 20), _stamp);
+    buttons.push_back(stampButton);
+    Button dropDown("assets/icons/dropdown.png", "assets/icons/dropdown.png", sf::Vector2f(484, 20), _stampSelect);
+    buttons.push_back(dropDown);
+    Button whiteButton("assets/icons/White.png", "assets/icons/White.png", sf::Vector2f(20, 100), _NULL, sf::Color::White);
+    buttons.push_back(whiteButton);
+    Button redButton("assets/icons/Red.png", "assets/icons/Red.png", sf::Vector2f(20, 164), _NULL, sf::Color::Red);
+    buttons.push_back(redButton);
+    Button blueButton("assets/icons/Blue.png", "assets/icons/Blue.png", sf::Vector2f(20, 228), _NULL, sf::Color::Blue);
+    buttons.push_back(blueButton);
+    Button tealButton("assets/icons/Teal.png", "assets/icons/Teal.png", sf::Vector2f(20, 292), _NULL, sf::Color(115, 251, 253, 255));
+    buttons.push_back(tealButton);
+    Button blackButton("assets/icons/Black.png", "assets/icons/Black.png", sf::Vector2f(20, 356), _NULL, sf::Color::Black);
+    buttons.push_back(blackButton);
+    Button magentaButton("assets/icons/Magenta.png", "assets/icons/Magenta.png", sf::Vector2f(20, 420), _NULL, sf::Color::Magenta);
+    buttons.push_back(magentaButton);
+    Button limeGreenButton("assets/icons/limeGreen.png", "assets/icons/limeGreen.png", sf::Vector2f(20, 484), _NULL, sf::Color::Green);
+    buttons.push_back(limeGreenButton);
+    Button darkGreenButton("assets/icons/darkGreen.png", "assets/icons/darkGreen.png", sf::Vector2f(20, 548), _NULL, sf::Color(55, 126, 71, 255));
+    buttons.push_back(darkGreenButton);
+    Button yellowButton("assets/icons/Yellow.png", "assets/icons/Yellow.png", sf::Vector2f(20, 612), _NULL, sf::Color::Yellow);
+    buttons.push_back(yellowButton);
+
     
     //main loop begins
     while (window.isOpen()) {
@@ -96,18 +121,26 @@ int main()
             if (allowDrawing == false) {
 
                 if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Left)) {
-                    for (Button thisButton : buttons) {
+                    for (Button& thisButton : buttons) {
                         if (thisButton.buttonQuery(mouseLocationVectorInt)) {
                             currentTool = thisButton.returnToolType();
+                            if (currentTool == _NULL) {
+                                currentColour = thisButton.returnButtonColour();
+                                currentTool = previousTool;
+                            }
+                            else {
+                                previousTool = currentTool;
+
+                            }
                         }
                     }
                 }
             }
 
-
-
             //main drawing loop
-            if (allowDrawing == true) {
+            if (allowDrawing == true || currentTool == _stampSelect || currentTool == _stamp) {
+
+                
                 if (currentTool == _ellipse) {
                     if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Left))
                     {
@@ -159,6 +192,12 @@ int main()
                             previewLocation = mouseLocationVectorFloat;
                         }
                         while (mouseBusy == true) {
+                            if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Escape)) {
+                                if (hierarchy.size() > 0) {
+                                    hierarchy.erase(hierarchy.end() - 1);
+                                }
+                                break;
+                            }
                             if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Left)) { //while lmb is pressed
                                 //this loop stores a freehand stroke in one hierarchy data entry in the stack, optimisation so cool
                                 window.setFramerateLimit(255);
@@ -176,7 +215,7 @@ int main()
                                 window.draw(horizontalBar);
                                 window.draw(otherVerticalBar);
                                 window.draw(otherHorizontalBar);
-                                for (Button thisButton : buttons) {
+                                for (Button& thisButton : buttons) {
                                     window.draw(thisButton.buttonRender());
                                 }
                                 window.display();
@@ -214,7 +253,103 @@ int main()
                         mouseBusy = false;
                     }
                 }
+                else if (currentTool == _stamp || currentTool == _stampSelect) {
+                    if (currentStamp == NULL) {
+                        currentStamp = new stampTool();
+                        currentTool = _stampSelect;
+                    }
+                    if (currentTool == _stampSelect) {
+                        openFile();
+                        stampFilePath = returnFilePath();
+                        imageSuccess = currentStamp->setImage(stampFilePath);
+                        if (imageSuccess == false) {
+                            incorrectFileTypeDialogueBox();
+                            allowDrawing = false;
+                            currentTool = _NULL;
+                        }
+                        else { currentTool = _stamp; }
+                    }
+                    if (currentTool == _stamp && allowDrawing) {
+                        bool successfulDrawing = currentStamp->stampLocation(mouseLocationVectorFloat);
+                        if (successfulDrawing == false) { currentTool = _NULL; }
+                        else if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Left)) {
+                            if (mouseBusy == false) {
+                                currentStamp = new stampTool();
+                                currentStamp->setImage(stampFilePath);
+                                currentStamp->stampLocation(mouseLocationVectorFloat);
+                                currentStamp->stampRender();
+                                hierarchy.push_back(currentStamp);
+                                mouseBusy = true;
+                            }
+                        }
+                        else { mouseBusy = false; }
+                    }
+                }
+                else if (currentTool == _custom) {
+                    bool newLinePlaced = false;
+                    bool linePlaced = false;
+                    if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Left)) { // if clicked
+                        if (mouseBusy == false) {
+                            currentCustom = new customShapeTool;
+                            mouseBusy = true;
+                            currentCustom->setColour(currentColour);
+                            currentCustom->placeLine(mouseLocationVectorFloat);
+                        }
+                        while (mouseBusy == true) {
+                            if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Escape)) {
+                                if (hierarchy.size() > 0) {
+                                    hierarchy.erase(hierarchy.end() - 1);
+                                }
+                                break;
+                            }
+
+                            mouseLocationVectorInt = sf::Mouse::getPosition(window);
+                            sf::Vector2f mouseLocationVectorFloat(mouseLocationVectorInt);
+                            if (sf::Mouse::isButtonPressed(sf::Mouse::Button::Left)) {
+                                if (linePlaced == false) {
+                                    currentCustom->placeLine(mouseLocationVectorFloat);
+                                    currentCustom->renderLines(mouseLocationVectorFloat);
+                                    newLinePlaced = true;
+                                    if (currentCustom->shapeCreated) {
+                                        window.clear();
+                                        hierarchy.push_back(currentFreehand);
+                                        mouseBusy = false;
+                                        window.setFramerateLimit(60);
+                                        break;
+                                    }
+                                    linePlaced = true;
+                                }
+                            }
+                            else {
+                                linePlaced = false;
+                            }
+                            window.setFramerateLimit(255);
+                            window.clear();
+                            window.draw(background);
+                            for (Tools* currentTool : hierarchy) {
+                                window.draw(currentTool->render());
+                            }
+                            
+                            window.draw(verticalBar);
+                            window.draw(horizontalBar);
+                            window.draw(otherVerticalBar);
+                            window.draw(otherHorizontalBar);
+                            for (Button& thisButton : buttons) {
+                                window.draw(thisButton.buttonRender());
+                            }
+                            if (newLinePlaced) {
+                                newLinePlaced = false;
+                            }
+                            else {
+                                window.draw(currentCustom->renderLines(mouseLocationVectorFloat));
+                            }
+                            window.display();
+
+                        }
+                    }
+                }
             }
+
             if (event->is<sf::Event::Closed>()) { window.close(); }//close the window if the cross is pressed
             //tool change function (there are set colours here because I don't have a colour swatch yet, but colour change infrastructure is implemented).
             if (sf::Keyboard::isKeyPressed(sf::Keyboard::Key::Num1)) {
@@ -263,6 +398,9 @@ int main()
                 window.draw(currentLine->renderLine());
             }
         }
+        else if (currentStamp && currentTool == _stamp) {
+            window.draw(currentStamp->stampRender());
+        }
         //re-get mouse position so the preview doesn't bug
 
         mouseLocationVectorInt = sf::Mouse::getPosition(window);
@@ -304,7 +442,7 @@ int main()
         
 
         //draw buttons
-        for (Button thisButton : buttons) {
+        for (Button& thisButton : buttons) {
             window.draw(thisButton.buttonRender());
         }
         //the big one

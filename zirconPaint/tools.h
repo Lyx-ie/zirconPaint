@@ -78,28 +78,36 @@ public:
 
 class customShapeTool : public Tools {
 public: 
+    sf::RenderTexture texture;
     lineTool interpolationLine;
     sf::Color customShapeColour;
     sf::Vector2f previousPosition;
     sf::Vector2f currentPosition;
     sf::Vector2f originPosition;
+    float linesPlaced = 0;
     std::vector <sf::Vector2f> linePlacements;
     float size = 5;
+    bool shapeCreated = false;
     customShapeTool();
     ~customShapeTool();
+    void setColour(sf::Color inputColour);
+    void placeLine(sf::Vector2f location);
+    sf::Sprite renderLines(sf::Vector2f location);
+    sf::Sprite render();
 
 };
 
 class stampTool : public Tools {
 public:
-    bool removeWarningPls;
+    std::string imageFilePath;
     bool stampToolValid;
-    sf::Texture blankTexture;
     sf::Texture imageTexture;
     sf::Vector2f imageLocation;
+    sf::Vector2u fileDimensions;
     stampTool();
     ~stampTool();
-    sf::Sprite stamp(sf::Vector2f location);
-    void setImage();
-
+    bool stampLocation(sf::Vector2f location);
+    bool setImage(std::string inputFilePath);
+    sf::Sprite stampRender();
+    sf::Sprite render();
 };

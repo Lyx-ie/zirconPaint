@@ -1,6 +1,5 @@
-
+#include "masterInclude.h"
 #include "tools.h"
-
 
 bool debugMode = false;
 sf::Vector2u drawingArea = (sf::Vector2u(1080, 720));
@@ -272,52 +271,134 @@ sf::Sprite freehandTool::render() {
 
 customShapeTool::customShapeTool()
 {
+	bool resizeSuccessful;
+	resizeSuccessful = texture.resize(drawingArea);
+	interpolationLine.setLineColour(customShapeColour);
+	interpolationLine.setLineThickness(size);
 }
 
 customShapeTool::~customShapeTool()
 {
 }
 
+void customShapeTool::setColour(sf::Color inputColour)
+{
+	customShapeColour = inputColour;
+}
+
+void customShapeTool::placeLine(sf::Vector2f location)
+{
+	if (linesPlaced == 0) {
+		originPosition = location;
+		interpolationLine.setLineOrigin(location);
+	}
+	else {
+		interpolationLine.setLineOrigin(previousPosition);
+	}
+	interpolationLine.setLineLocation(location);
+	linePlacements.push_back(location);
+	linesPlaced++;
+}
+
+
+
+sf::Sprite customShapeTool::renderLines(sf::Vector2f location)
+{
+	for (int i = 1; i < linesPlaced; i++) {
+		interpolationLine.setLineOrigin(linePlacements.at(i));
+		if (linesPlaced > 1) {
+			interpolationLine.setLineLocation(linePlacements.at(i - 1));
+		}
+		else { interpolationLine.setLineLocation(linePlacements.at( i )); }
+		texture.draw(interpolationLine.drawLine());
+		sf::Vector2f debugValue;
+		debugValue = linePlacements.at(i);
+		std::cout << debugValue.x << " " << debugValue.y << std::endl;
+
+	}
+	std::cout << std::endl;
+	interpolationLine.setLineOrigin(previousPosition);
+	interpolationLine.setLineLocation(location);
+	
+
+	currentPosition = location;
+	if (previousPosition.x != NULL && previousPosition.y != NULL) {
+		if (abs(previousPosition.x - currentPosition.x) < (size * 2) || abs(previousPosition.y - currentPosition.y) < (size * 2)) {
+			sf::ConvexShape custom;
+			custom.setPointCount(linesPlaced);
+			int i = 0;
+			for (sf::Vector2f thisPoint : linePlacements) {
+				custom.setPoint(i, { thisPoint });
+				i++;
+			}
+			texture.draw(custom);
+			shapeCreated = true;
+		}
+	}
+	texture.draw(interpolationLine.render());
+	sf::Sprite sprite(texture.getTexture());
+	return sf::Sprite(sprite);
+}
+
+sf::Sprite customShapeTool::render() {
+
+	sf::ConvexShape custom;
+	custom.setPointCount(linesPlaced);
+	int i = 0;
+	for (sf::Vector2f thisPoint : linePlacements) {
+		custom.setPoint(i, { thisPoint });
+		i++;
+	}
+	texture.draw(custom);
+	sf::Sprite sprite(texture.getTexture());
+	return sf::Sprite(sprite);
+}
+
 stampTool::stampTool()
 {
 	stampToolValid = false;
-	removeWarningPls = blankTexture.loadFromFile("assets/icons/blank.png");
 }
 
 stampTool::~stampTool()
 {
 }
 
-sf::Sprite stampTool::stamp(sf::Vector2f location)
+bool stampTool::stampLocation(sf::Vector2f location)
 {
-	
 	if (stampToolValid == false) {
 		incorrectFileTypeDialogueBox2();
-		sf::Sprite blankSprite(blankTexture);
-		return (blankSprite);
+		return false;
 	}
 	else {
-		sf::Sprite stampSprite(imageTexture);
-		stampSprite.setPosition(location);
+		imageLocation = location;
+		return true;
 	}
 
 }
 
-void stampTool::setImage()
+bool stampTool::setImage(std::string inputFilePath)
 {
-	result = openFile();
-	switch (result) {
-	case(TRUE): {
-		std::cout << sFilePath;
-		break;
-	}
-	case(FALSE): {
-		incorrectFileTypeDialogueBox();
-		break;
-	}
-	}
-	stampToolValid = imageTexture.loadFromFile(sFilePath);
-	if (stampToolValid == false) {
-		incorrectFileTypeDialogueBox();
-	}
+	imageFilePath = returnFilePath();
+	stampToolValid = imageTexture.loadFromFile(imageFilePath);
+	//imageTexture.resize(imageTexture.getSize());
+	return stampToolValid;
+}
+
+sf::Sprite stampTool::stampRender()
+{
+	fileDimensions = imageTexture.getSize();
+
+	
+	sf::Sprite sprite(imageTexture);
+	
+
+	sprite.setPosition(sf::Vector2f(imageLocation.x - fileDimensions.x/2, imageLocation.y - fileDimensions.y / 2));
+	return sf::Sprite(sprite);
+}
+
+sf::Sprite stampTool::render() {
+	sf::Sprite sprite(imageTexture);
+	sprite.setPosition(sf::Vector2f(imageLocation.x - fileDimensions.x / 2, imageLocation.y - fileDimensions.y / 2));
+
+	return sf::Sprite(sprite);
 }
